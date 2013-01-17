@@ -1,6 +1,12 @@
-*.class
-
-# Package Files #
+.settings/*
+bin/*
+.classpath
+*.swp
 *.jar
-*.war
-*.ear
+.project
+intermediate_crop*
+pretty_print*
+target/*
+*.tmp
+.DS_Store
+*.log
