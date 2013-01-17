@@ -5,17 +5,15 @@ import java.io.FileInputStream;
 import java.util.HashMap;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
-
-import org.apache.pivot.util.concurrent.Task;
 import org.agmip.core.types.TranslatorInput;
+import org.agmip.translators.agmip.AgmipInput;
 import org.agmip.translators.csv.CSVInput;
 import org.agmip.translators.dssat.DssatControllerInput;
-import org.agmip.translators.agmip.AgmipInput;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class TranslateFromTask extends Task<HashMap> {
+public class TranslateFromTask {
+
     private static final Logger LOG = LoggerFactory.getLogger(TranslateFromTask.class);
     private String file;
     private TranslatorInput translator;
@@ -49,13 +47,12 @@ public class TranslateFromTask extends Task<HashMap> {
             translator = new AgmipInput();
         } else if (file.toLowerCase().endsWith(".csv")) {
             translator = new CSVInput();
-        } else { 
+        } else {
             LOG.error("Unsupported file: {}", file);
             throw new Exception("Unsupported file type");
         }
     }
 
-    @Override
     public HashMap<String, Object> execute() {
         HashMap<String, Object> output = new HashMap<String, Object>();
         try {

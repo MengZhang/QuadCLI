@@ -9,9 +9,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Scanner;
 import static org.agmip.util.JSONAdapter.*;
-import org.apache.pivot.util.concurrent.Task;
-import org.apache.pivot.util.concurrent.TaskListener;
-import org.apache.pivot.wtk.TaskAdapter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -62,6 +59,7 @@ public class QuadCmdLine {
         }
 
         System.out.println("Done");
+//        System.exit(0);
 
     }
 
@@ -193,55 +191,41 @@ public class QuadCmdLine {
             }
         } else {
             TranslateFromTask task = new TranslateFromTask(convertPath);
-            TaskListener<HashMap> listener = new TaskListener<HashMap>() {
-                @Override
-                public void taskExecuted(Task<HashMap> t) {
-                    HashMap data = t.getResult();
-                    if (!data.containsKey("errors")) {
-                        if (mode.equals(DomeMode.NONE)) {
-                            toOutput(data);
-                        } else {
-                            applyDome(data, mode.toString().toLowerCase());
-                        }
-                    } else {
-                        LOG.error((String) data.get("errors"));
-                    }
-                    t.abort();
+            HashMap data;
+            try {
+                data = task.execute();
+            } catch (Exception e) {
+                LOG.error(getStackTrace(e));
+                return;
+            }
+            if (!data.containsKey("errors")) {
+                if (mode.equals(DomeMode.NONE)) {
+                    toOutput(data);
+                } else {
+                    applyDome(data, mode.toString().toLowerCase());
                 }
-
-                @Override
-                public void executeFailed(Task<HashMap> arg0) {
-                    LOG.error(getStackTrace(arg0.getFault()));
-                    arg0.abort();
-                }
-            };
-            task.execute(new TaskAdapter<HashMap>(listener));
+            } else {
+                LOG.error((String) data.get("errors"));
+            }
         }
     }
 
     private void applyDome(HashMap map, String mode) {
         LOG.info("Applying DOME...");
         ApplyDomeTask task = new ApplyDomeTask(fieldPath, strategyPath, mode, map);
-        TaskListener<HashMap> listener = new TaskListener<HashMap>() {
-            @Override
-            public void taskExecuted(Task<HashMap> t) {
-                HashMap data = t.getResult();
-                if (!data.containsKey("errors")) {
-                    //LOG.error("Domeoutput: {}", data.get("domeoutput"));
-                    toOutput((HashMap) data.get("domeoutput"));
-                } else {
-                    LOG.error((String) data.get("errors"));
-                }
-                t.abort();
-            }
-
-            @Override
-            public void executeFailed(Task<HashMap> arg0) {
-                LOG.error(getStackTrace(arg0.getFault()));
-                arg0.abort();
-            }
-        };
-        task.execute(new TaskAdapter<HashMap>(listener));
+        HashMap data;
+        try {
+            data = task.execute();
+        } catch (Exception e) {
+            LOG.error(getStackTrace(e));
+            return;
+        }
+        if (!data.containsKey("errors")) {
+            //LOG.error("Domeoutput: {}", data.get("domeoutput"));
+            toOutput((HashMap) data.get("domeoutput"));
+        } else {
+            LOG.error((String) data.get("errors"));
+        }
     }
 
     private void toOutput(HashMap map) {
@@ -249,52 +233,28 @@ public class QuadCmdLine {
 
         if (models.size() == 1 && models.get(0).equals("JSON")) {
             DumpToJson task = new DumpToJson(convertPath, outputPath, map);
-            TaskListener<String> listener = new TaskListener<String>() {
-                @Override
-                public void taskExecuted(Task<String> t) {
-                    LOG.info("Translation completed");
-                    t.abort();
-                }
-
-                @Override
-                public void executeFailed(Task<String> arg0) {
-                    LOG.error(getStackTrace(arg0.getFault()));
-                    arg0.abort();
-                }
-            };
-            task.execute(new TaskAdapter<String>(listener));
+            try {
+                task.execute();
+                LOG.info("Translation completed");
+            } catch (Exception e) {
+                LOG.error(getStackTrace(e));
+            }
         } else {
             if (models.indexOf("JSON") != -1) {
                 DumpToJson task = new DumpToJson(convertPath, outputPath, map);
-                TaskListener<String> listener = new TaskListener<String>() {
-                    @Override
-                    public void taskExecuted(Task<String> t) {
-                        t.abort();
-                    }
-
-                    @Override
-                    public void executeFailed(Task<String> arg0) {
-                        LOG.error(getStackTrace(arg0.getFault()));
-                        arg0.abort();
-                    }
-                };
-                task.execute(new TaskAdapter<String>(listener));
+                try {
+                    task.execute();
+                } catch (Exception e) {
+                    LOG.error(getStackTrace(e));
+                }
             }
             TranslateToTask task = new TranslateToTask(models, map, outputPath);
-            TaskListener<String> listener = new TaskListener<String>() {
-                @Override
-                public void executeFailed(Task<String> arg0) {
-                    LOG.error(getStackTrace(arg0.getFault()));
-                    arg0.abort();
-                }
-
-                @Override
-                public void taskExecuted(Task<String> arg0) {
-                    LOG.info("=== Completed translation job ===");
-                    arg0.abort();
-                }
-            };
-            task.execute(new TaskAdapter<String>(listener));
+            try {
+                task.execute();
+                LOG.info("=== Completed translation job ===");
+            } catch (Exception e) {
+                LOG.error(getStackTrace(e));
+            }
         }
     }
 
@@ -322,7 +282,7 @@ public class QuadCmdLine {
             System.out.println("\t\t* If not provided, will use convert_path");
             System.out.println("***********************************************************************************************************************");
         } else {
-            System.out.println("Type -h or -help for arguments info");
+            System.out.println("\nType -h or -help for arguments info\n");
         }
     }
 
